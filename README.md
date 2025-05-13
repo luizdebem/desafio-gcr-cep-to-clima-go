@@ -5,7 +5,7 @@
 - Criar .env na raíz com WEATHER_API_KEY
   - `docker build -t gcr-cep-to-clima .`
   - `docker run gcr-cep-to-clima 88025000`
-- Google Cloud Run:
+  - URL Google Cloud Run: `https://cep-to-clima-510380129417.us-central1.run.app/88010301`
 
 ## Objetivo
 Desenvolver um sistema em Go que receba um CEP, identifica a cidade e retorna o clima atual (temperatura em graus celsius, fahrenheit e kelvin). Esse sistema deverá ser publicado no Google Cloud Run.

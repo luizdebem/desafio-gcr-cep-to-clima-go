@@ -10,6 +10,7 @@ import (
 	url2 "net/url"
 	"os"
 	"regexp"
+	"strings"
 )
 
 type ViaCEPResponse struct {
@@ -31,32 +32,42 @@ type TemperatureResponse struct {
 func main() {
 	initEnv()
 
-	if len(os.Args) != 2 {
-		fmt.Println("Please provide a CEP")
-		return
+	http.HandleFunc("/", handleCEP)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
+	fmt.Printf("Starting server on port %s\n", port)
 
-	cep := os.Args[1]
+	http.ListenAndServe(":"+port, nil)
+}
+
+func handleCEP(w http.ResponseWriter, r *http.Request) {
+	cep := strings.TrimPrefix(r.URL.Path, "/")
+
 	if !isValidCEP(cep) {
-		fmt.Println("Invalid CEP format")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid zipcode"})
 		return
 	}
 
 	viaCEP, err := fetchViaCEP(cep)
 	if err != nil {
-		fmt.Println("Error 1:", err)
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
 	weather, err := fetchWeather(viaCEP.Localidade)
 	if err != nil {
-		fmt.Println("Error 2:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
 	temps := convertTemperatures(weather.Current.TempC)
-	response, _ := json.Marshal(temps)
-	fmt.Println(string(response))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(temps)
 }
 
 func isValidCEP(cep string) bool {
